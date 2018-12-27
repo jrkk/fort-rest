@@ -15,6 +15,7 @@ class Response
     protected $data = [];
     function __construct(Header &$header)
     {
+        System::log('info', 'Response class initiated');
         $this->header = $header;
         $this->header->set('http_response_code', 501);
         $this->data[$this->_status_key] = "NO";

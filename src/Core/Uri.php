@@ -20,7 +20,8 @@ class Uri implements UriInterface {
     function __construct($url = '') {
         System::log("info", "Uri Class intiated");
         if(empty($url) || $url === '' ) {
-            $this->url = "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
+            $scheme = isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https';
+            $this->url = "{$scheme}://{$_SERVER['HTTP_HOST']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
         }
     }
     public function getScheme() {

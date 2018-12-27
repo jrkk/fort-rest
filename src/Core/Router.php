@@ -11,6 +11,7 @@ class Router
 
     function __construct()
     {
+        System::log('info', 'Router class initiated');
         $path = dirname(FCPATH) . '/src/Config/Routes.php';
         $this->routing = include_once $path;
 

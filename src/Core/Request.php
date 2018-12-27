@@ -22,6 +22,7 @@ class Request implements ServerRequestInterface
     protected $server = null;
     function __construct(Header &$header)
     {
+        System::log('info', 'Request class initiated');
         $this->header = $header;
     }
 

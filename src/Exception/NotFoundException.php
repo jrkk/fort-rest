@@ -1,6 +1,5 @@
 <?php
-
-namespace App\Exceptions;
+namespace App\Exception;
 
 use Psr\Container\NotFoundExceptionInterface;
 

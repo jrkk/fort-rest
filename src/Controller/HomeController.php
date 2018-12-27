@@ -10,6 +10,8 @@ class HomeController extends Controller {
 
         $this->load('entity', User::class, 'user');
 
+        $this->user->update();
+
         $this->response
             ->setStatus(200)
             ->setContentType('text/plain')

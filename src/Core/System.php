@@ -4,8 +4,10 @@ namespace App\Core;
 class System {
 
     public static $logger;
+    public static $startAtTm = 0;
 
     public static function Init() {
+        self::$startAtTm = microtime(true);
         self::$logger = new \App\Driver\Logger\FileLogger();
     }
 
@@ -18,18 +20,16 @@ class System {
     public static function Start() {
 
         $uri = new Uri();
-
         $requestHeader = new Header();
         $responseHeader = new Header();
-
         $server = new Server();
-
         $request = new Request($requestHeader);
+        $response = new Response($responseHeader);
+        $router = new Router();
+        
         $request->withUri($uri)
                 ->withServer($server);
-        $response = new Response($responseHeader);
-
-        $router = new Router();
+        
         $target = $router->getRoute($request, $response);
         if($target === false) {
             return $response->send();
@@ -44,6 +44,8 @@ class System {
     }
 
     public static function Stop() {
+        $endAt = microtime(true);
+        self::$logger->notice("Process completed in :".($endAt-self::$startAtTm));
         self::$logger->push('process');
     }
 

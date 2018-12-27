@@ -10,7 +10,7 @@ class Native implements Database {
 
     function __construct()
     {
-        
+        \App\Core\System::log('notice', 'Mysql Native driver has intiated');
     }
 
     public function connect() {

@@ -7,7 +7,7 @@ class Controller
 {
 
     function __construct() {
-
+        System::log('info', 'Controller class initiated');
     }
 
     protected $request = null;

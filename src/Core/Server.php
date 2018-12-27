@@ -2,6 +2,11 @@
 namespace App\Core;
 
 class Server extends Container {
+
+    function __construct()
+    {
+        System::log('info', 'Server class initiated');
+    }
     
     public function parse() {
         foreach($_SERVER as $key => $value) {
@@ -16,7 +21,7 @@ class Server extends Container {
     public function getReferer() {
         try {
             return $this->has('HTTP_REFERER') ? $this->get('HTTP_REFERER') : $this->get('REMOTE_ADDR');
-        } catch ( \App\Exceptions\NotFoundException $nfe ) {
+        } catch ( \App\Exception\NotFoundException $nfe ) {
             return $this->get('REMOTE_ADDR');
         }
         return NULL;
@@ -25,7 +30,7 @@ class Server extends Container {
     public function getProtocol() {
         try {
             return $this->get('REQUEST_SCHEME');
-        } catch ( \App\Exceptions\ContainerException $ce ) {
+        } catch ( \App\Exception\ContainerException $ce ) {
             return 'http';
         }
 

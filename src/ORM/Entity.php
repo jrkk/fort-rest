@@ -2,16 +2,23 @@
 namespace App\ORM;
 
 use App\Prototype\Database;
+use App\Driver\Mysql\Query;
 
 class Entity {
 
-    private $properties = [];
-    private $primaryKey = [];
-    private $table = '';
+    protected $properties = [];
+    protected $primaryKey = [];
+    protected $table = '';
+
+    protected $_query = "";
+    protected $_binds = "";
+    protected $_data = [];
+
 
     private $db = null;
     function __construct(Database &$db) {
         $this->db = $db;
+        \App\Core\System::log('notice','Entity has initiated for '.get_class($this));
     }
 
     public function bindProperties() {
@@ -68,8 +75,6 @@ class Entity {
             $propertyConfiguration["default"] = $this->{$property->getName()};
             $this->properties[$property->getName()] = $propertyConfiguration;
         }
-        print_r($this->table);
-        print_r($this->properties);
     }
     
     public function find() {
@@ -81,11 +86,48 @@ class Entity {
     }
     
     public function save() {
-
+        $binds = "";
+        $query = "INSERT INTO {$this->table} ";
+        $columnsList = "";
+        $valuesList = "";
+        foreach($this->properties as $column => $configuration) {
+            $columnsList .= ",`{$column}`";
+            $valuesList .= ",?";
+            $this->_binParamFormat($this->{$column}, $binds);
+            $data[] = $this->{$column};
+        }
+        $columnsList = ltrim($columnsList, ",");
+        $valuesList = ltrim($valuesList, ",");
+        $query .= "({$columnsList}) VALUES ({$valuesList})";
+        var_export([$query, $binds, $data]);
     }
 
     public function update() {
+        $binds = "";
+        $query = "UPDATE {$this->table} ";
+        $setterList = "";
+        foreach($this->properties as $column => $configuration) {
+            $setterList .= ",`{$column}` = ?";
+            $this->_binParamFormat($this->{$column}, $binds);
+            $data[] = $this->{$column};
+        }
+        $setterList = ltrim($setterList, ",");
+        $query .= "SET ({$setterList}) WHERE {$this->primaryKey['0']} = ?";
+        $this->_binParamFormat($this->{$this->primaryKey[0]}, $binds);
+        $data[] = $this->{$this->primaryKey[0]};
+        var_export([$query, $binds, $data]);
+    }
 
+    protected function _binParamFormat(&$value, &$binds) {
+        if( is_int($value) || is_bool($value) ) {
+            $binds .= "i";
+        } else if ( is_float($value) ) {
+            $binds .= "d";
+        } else if ( is_string($value) && strlen($value) < 4096 ) {
+            $binds .= "s";
+        } else {
+            $binds .= "b";
+        }
     }
 
     public function updateById() {
