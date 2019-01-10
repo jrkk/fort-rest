@@ -2,8 +2,8 @@
 namespace App\Prototype;
 
 interface Database {
-    public function retrive();
-    public function update();
-    public function persist();
-    public function remove();
+    public static function retrive();
+    public static function update();
+    public static function persist();
+    public static function remove();
 }

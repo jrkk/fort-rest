@@ -2,22 +2,22 @@
 namespace App\ORM;
 
 use App\Prototype\Database;
+use App\Driver\Mysql\Native as DB;
 use App\Driver\Mysql\Query;
 
 class Entity {
 
-    protected $properties = [];
-    protected $primaryKey = [];
-    protected $table = '';
+    protected $_table = '';
+    protected $_nullables = [];
+    protected $_data_types = [];
+    protected $_properties = [];
+    protected $_keys = [];
+    protected $_squences = [];
+    protected $_auto_columns = [];
+    protected $_primitives = [];
+    protected $_changed_columns = [];
 
-    protected $_query = "";
-    protected $_binds = "";
-    protected $_data = [];
-
-
-    private $db = null;
-    function __construct(Database &$db) {
-        $this->db = $db;
+    function __construct() {
         \App\Core\System::log('notice','Entity has initiated for '.get_class($this));
     }
 
@@ -32,7 +32,7 @@ class Entity {
             if(strstr($annotation, "@") === false )
                     continue;
             if(strstr($annotation, "@Table") !== false) {
-                $this->table = str_replace(['@Table=',"\n"], ["",""], $annotation);
+                $this->_table = str_replace(['@Table=',"\n"], ["",""], $annotation);
             }
         }
         $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
@@ -42,100 +42,114 @@ class Entity {
             $comments = explode("\n", $document);
             $propertyConfiguration = [];
             foreach ($comments as $comment) {
+                
+                $name = '';
+                $name = $property->getName();
+
                 $annotation = ltrim($comment,' ');
                 if(strstr($comment, "@") === false )
                     continue;
                 if(strstr($annotation, "@Id") !== false) {
                     $propertyConfiguration["id"] = true;
-                    $this->primaryKey[] = $property->getName();
+                    $this->_keys[] = $name;
                 }
                 if(strstr($annotation, "@AutoSequence") !== false) {
-                    $propertyConfiguration["auto"] = true;
+                    $_auto_columns[] = $name;
                 }
                 if(strstr($annotation, "@Nullable") !== false) {
-                    $propertyConfiguration["Nullable"] = true;
+                    $this->_nullables[] = $name;
                 }
                 if(strstr($annotation, "@Column") !== false) {
-                    $propertyConfiguration["column"] = str_replace(['@Column=',"\n"], ["",""], $annotation);
-                }
+                    $column = str_replace(['@Column=',"\n","\t"], ["","",""], $annotation);
+                    $this->_properties[$name] = $column;
+                } 
                 if(strstr($annotation, "@Type") !== false) {
-                    $propertyConfiguration["class"] = str_replace(['@Type=',"\n"], ["",""], $annotation);
+                    $this->_data_types[$name] = str_replace(['@Type=',"\n"], ["",""], $annotation);
                 }
             }
-            if(!isset($propertyConfiguration["column"])) {
-                $propertyConfiguration["column"] = $property->getName();
+            if(!isset($this->_properties[$name])){
+                $this->_properties[$name] = $name;
             }
-            if( isset($propertyConfiguration["class"])
-                    && in_array($propertyConfiguration["class"], ['int','string','char','float']))
-                $propertyConfiguration['premitive'] = true;
+            if( isset($this->_data_types[$name])
+                    && in_array($this->_data_types[$name], ['int','string','char','float']))
+                $this->_primitives[] = $name;
             else {
-                $propertyConfiguration["class"] = gettype($this->{$property->getName()});
-                $propertyConfiguration['premitive'] = false;
+                $this->_data_types[$name] = gettype($this->{$name});
+                if(in_array($this->_data_types[$name], ['int','string','char','float']))
+                    $this->_primitives[] = $name;
             }
-            $propertyConfiguration["default"] = $this->{$property->getName()};
-            $this->properties[$property->getName()] = $propertyConfiguration;
         }
     }
     
-    public function find() {
+    public function find(array $critera = []) {
+        $query = new Query();
+        if(!isset($critera['select']) || empty($critera['select']) ) {
 
+        }
     }
 
     public function findById() {
-
+        $query = new Query();
+        $query->select('*')
+            ->where($this->_keys[0], $this->{$this->_keys[0]})
+            ->limit(1,0)
+            ;
     }
     
-    public function save() {
-        $binds = "";
-        $query = "INSERT INTO {$this->table} ";
-        $columnsList = "";
-        $valuesList = "";
-        foreach($this->properties as $column => $configuration) {
-            $columnsList .= ",`{$column}`";
-            $valuesList .= ",?";
-            $this->_binParamFormat($this->{$column}, $binds);
-            $data[] = $this->{$column};
+    public function save() : bool {
+        $data = [];
+        foreach ($this->_properties as $property => $column) {
+            if( \in_array($property, $this->_keys) 
+                || \in_array($property, $this->_nullables) ) continue;
+            if(!empty($this->{$property}))
+                $data[$column] = $this->{$property};
         }
-        $columnsList = ltrim($columnsList, ",");
-        $valuesList = ltrim($valuesList, ",");
-        $query .= "({$columnsList}) VALUES ({$valuesList})";
-        var_export([$query, $binds, $data]);
+
+        $query = new Query();
+        $query->insert($this->_table, $data);
+
+        $insertId = 0;
+        $insertId = DB::persist(
+            $query->getQuery(), 
+            $query->getBindParamsFormat(), 
+            $query->getBindPrams()
+        );
+
+        $this->{$this->_keys[0]} = $insertId;
+
+        return $insertId > 0 ? true : false;
+
     }
 
-    public function update() {
-        $binds = "";
-        $query = "UPDATE {$this->table} ";
-        $setterList = "";
-        foreach($this->properties as $column => $configuration) {
-            $setterList .= ",`{$column}` = ?";
-            $this->_binParamFormat($this->{$column}, $binds);
-            $data[] = $this->{$column};
+    public function update(array $properties = [], Query $query = null ) : bool {
+
+        if(count($properties) <= 0) return false;
+        $data = [];
+        foreach ($properties as $property) {
+            if(!isset($this->_properties[$property]) || \is_numeric($property) ) {
+                throw new Exception('Property or Column name not found');
+            }    
+            $data[$this->_properties[$property]]  = $this->{$property};
         }
-        $setterList = ltrim($setterList, ",");
-        $query .= "SET ({$setterList}) WHERE {$this->primaryKey['0']} = ?";
-        $this->_binParamFormat($this->{$this->primaryKey[0]}, $binds);
-        $data[] = $this->{$this->primaryKey[0]};
-        var_export([$query, $binds, $data]);
-    }
 
-    protected function _binParamFormat(&$value, &$binds) {
-        if( is_int($value) || is_bool($value) ) {
-            $binds .= "i";
-        } else if ( is_float($value) ) {
-            $binds .= "d";
-        } else if ( is_string($value) && strlen($value) < 4096 ) {
-            $binds .= "s";
-        } else {
-            $binds .= "b";
+        if($query === null) {
+            $query = new Query();
+            $query->where($this->_keys[0], $this->{$this->_keys[0]});
         }
-    }
 
-    public function updateById() {
+        $query->update($this->_table, $data);
 
+        $affected = DB::update(
+            $query->getQuery(), 
+            $query->getBindParamsFormat(), 
+            $query->getBindPrams()
+        );
+
+        return $affected > 0 ? true : false;
     }
 
     public function remove() {
-        throw new \Exeception('Delete records in Database is not allowed now');
+        
     }
 
 }

@@ -101,25 +101,51 @@ class Query {
         return $this;
     }
 
-    public function insert(string $table, array $data = []) {
+    public function insert(string $table, array $data = []) : self {
         $this->_query = "INSERT INTO {$table} ";
         $columnsList = "";
         $valuesList = "";
         foreach($data as $column => $value) {
             $columnsList .= ",`{$column}`";
             $valuesList .= ",?";
-            $this->formatString($value);
-            $this->params($value);
+            $this->_binParamFormat($value);
+            $this->_params[] = $value;
         }
+        $columnsList = \ltrim($columnsList, ",");
+        $valuesList = \ltrim($valuesList, ",");
         $this->_query .= " ({$columnsList}) VALUES ({$valuesList}) ";
         return $this;
     }
 
-    public function update(string $table, $) {
-
+    public function update(string $table, array $data) : self {
+        $binds = "";
+        $this->_query = "UPDATE {$table}";
+        $setterList = "";
+        foreach($data as $column => $value) {
+            $setterList .= ",`{$column}` = ?";
+            $this->_binParamFormat($value);
+            $this->_params[] = $value;
+        }
+        $setterList = \ltrim($setterList, ",");
+        $this->_query .= " SET ({$setterList}) ";
+        return $this;
     }
 
     public function getQuery() : string {
+        if($this->select != '') $this->_query .= $this->select;
+        if(count($this->whereClause) > 0 ) {
+            $where = "";
+            foreach ($this->whereClause as $condition) {
+                $where .= "AND {$condition['_column']} {$condition['_operand']} ? ";
+                $this->_binParamFormat($condition['_column']);
+                $this->_params[] = $condition['_value'];
+            }
+            $where = \ltrim($where, 'AND');
+            if($where != "") {
+                $this->_query .= " WHERE {$where} ";
+            } 
+        }
+        if(count)
         return $this->_query;
     }
 
@@ -131,7 +157,11 @@ class Query {
         return $this->_params;
     }
 
-    protected function getParamFormat($value) {
+    protected function flush() : self {
+        
+    }
+
+    protected function _binParamFormat(&$value) {
         if( is_int($value) || is_bool($value) ) {
             $this->_binds .= "i";
         } else if ( is_float($value) ) {
@@ -142,9 +172,4 @@ class Query {
             $this->_binds .= "b";
         }
     }
-
-    protected function clean() {
-
-    }
-
 }

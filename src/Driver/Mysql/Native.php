@@ -6,43 +6,40 @@ use App\Config\MySqlConfig;
 
 class Native implements Database {
 
-    protected $connection = null;
+    protected static $connection = null;
 
-    function __construct()
-    {
-        \App\Core\System::log('notice', 'Mysql Native driver has intiated');
+    public static function connect() {
+        if(self::$connection != null) {
+            self::$connection = mysqli_connect(
+                MySqlConfig::HOST,
+                MySqlConfig::USERNAME,
+                MySqlConfig::PASSWORD, 
+                MySqlConfig::DATABASE
+            );
+        } 
     }
 
-    public function connect() {
-        $this->connection = mysqli_connect(
-            MySqlConfig::HOST,
-            MySqlConfig::USERNAME,
-            MySqlConfig::PASSWORD, 
-            MySqlConfig::DATABASE
-        );
-    }
-
-    public function close() {
-        if($this->connection !== null) {
-            mysqli_close($this->connection);
+    public static function close() {
+        if(self::$connection != null) {
+            mysqli_close(self::$connection);
         }
     }
 
-    public function persist()
+    public static function persist(string $query = '', string $formatString = '', array $data = [])
+    {
+        \var_export(\func_get_args());
+    }
+
+    public static function update(string $query = '', string $formatString = '', array $data = []) {
+        \var_export(\func_get_args());
+    }
+
+    public static function retrive()
     {
         
     }
 
-    public function update() {
-
-    }
-
-    public function retrive()
-    {
-        
-    }
-
-    public function remove() {
+    public static function remove() {
         
     }
     

@@ -4,7 +4,7 @@ namespace App\Entity;
 use App\ORM\Entity;
 
 /**
- * @table=users
+ * @Table=users
  */
 class User extends Entity  {
 
@@ -21,7 +21,7 @@ class User extends Entity  {
     var $id = 0;
 
     /**
-     * @Column=username
+     * @Column=user
      * @Type=DateTime
      */
     var $username;
@@ -31,7 +31,11 @@ class User extends Entity  {
     var $role;
     var $createddt;
     var $createdtm;
+    /**
+     * @Nullable
+     */
     var $updated;
     var $active;
     var $state;
+    
 }

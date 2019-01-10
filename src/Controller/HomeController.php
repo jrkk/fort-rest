@@ -10,7 +10,15 @@ class HomeController extends Controller {
 
         $this->load('entity', User::class, 'user');
 
-        $this->user->update();
+        $this->user->username = 'Jrk Kiran';
+        $this->user->email = 'kiranjrkk@gmail.com';
+        $this->user->mobile = 9676640228;
+        $this->user->role = 'admin';
+
+        //$this->user->update(['username','email']);
+
+        $this->user->id = 11;
+        $this->user->findById();
 
         $this->response
             ->setStatus(200)
