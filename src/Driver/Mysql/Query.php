@@ -3,19 +3,17 @@ namespace App\Driver\Mysql;
 
 class Query {
 
-    protected $select = "";
-    protected $updates = [];
-
-    protected $setClause = [];
-    protected $whereClause = [];
-    protected $groupClause = [];
-    protected $havingClause = [];
-    protected $formatString = "";
-
-    protected $table = "";
-    protected $joins = [];
-
-    protected $params = [];
+    protected $_MODE = 0;
+    protected $_COLUMNS = [];
+    protected $_FROM = '';
+    protected $_JOINS = '';
+    protected $_WHERE =  '';
+    protected $_GROUP_BY= '';
+    protected $_HAVING = '';
+    protected $_ORDER_BY = '';
+    protected $_LIMIT = '';
+    protected $_OFFSET = '';
+    protected $_SETTERS = '';
 
     protected $_query = "";
     protected $_binds = "";
@@ -26,82 +24,106 @@ class Query {
         \App\core\System::log('notice', 'New Query Builder class initiated');
     }
     
-    public function select(array $fields = ["*"], bool $mode = false) : self {
-        if(count($fields) == 1 && $fields[0] == "*")  {
-            $this->select = "*";
-        } else {
-            foreach($fields as $index => $field) {
-                if(is_numeric($index)) {
-                    if($mode === false) 
-                        $this->select .= "`,{$field}`";
-                    else
-                        $this->select .= ",{$field}";
-                } else {
-                        $this->select .= ",{$index}";
-                }
-            }
-            $this->select = ltrim($this->select, ',');
-        }
-        return $this;
-    }
+    
 
     public function where(string $column , $value, string $operand = "=") : self {
-        $this->whereClause[] = [
-            '_column' => $column,
-            '_value' => $value,
-            '_operand' => $operand
-        ];
+        $CLAUSE = $this->_WHERE === '' ? ' WHERE ' : ' AND ';
+        $this->_WHERE .= $CLAUSE." `{$column}` {$operand} ? ";
+        $this->_binParamFormat($value);
+        $this->_params[] =  $value;
         return $this;
     }
 
-    public function where_in(string $column, array $assoc) : self {
-        $this->whereClause[] = [
-            '_column' => $column,
-            '_value' => " (".implode(",", array_values($assoc)).") ",
-            '_operand' => " IN "
-        ];
+    public function whereOr(string $column , $value, string $operand = "=") : self {
+        $CLAUSE = $this->_WHERE === '' ? ' WHERE ' : ' AND ';
+        $this->_WHERE .= $CLAUSE." `{$column}` {$operand} ? ";
+        $this->_binParamFormat($value);
+        $this->_params[] =  $value;
         return $this;
     }
 
-    public function where_not_in(string $column, array $assoc) : self {
-        $this->whereClause[] = [
-            '_column' => $column,
-            '_value' => " (".implode(",", array_values($assoc)).") ",
-            '_operand' => " NOT IN "
-        ];
+    public function whereIn(string $column, array $assoc) : self {
+        $CLAUSE = $this->_WHERE === '' ? ' WHERE ' : ' AND ';
+        $this->_WHERE .= $CLAUSE." `{$column}` IN ? ";
+        $this->_binds .= 's';
+        $this->_params[] = '('.implode(",", array_values($assoc)).')';
         return $this;
     }
 
-    public function group_by(string $column) : self {
-        $this->groupClause[] = $column;
+    public function whereNotIn(string $column, array $assoc) : self {
+        $CLAUSE = $this->_WHERE === '' ? ' WHERE ' : ' AND ';
+        $this->_WHERE .= $CLAUSE." `{$column}` NOT IN ? ";
+        $this->_binds .= 's';
+        $this->_params[] = '('.implode(",", array_values($assoc)).')';
+        return $this;
+    }
+
+    public function groupBy(string $column) : self {
+        $this->_GROUP_BY = "GROUP BY `{$column}` ";
         return $this;
     }
 
     public function having(string $column , $value, string $operand = "=") : self {
-        $this->havingClause[] = [
-            '_column' => $column,
-            '_value' => $value,
-            '_operand' => $operand
-        ];
+        $CLAUSE = $this->_HAVING === '' ? ' HAVING ' : ' AND ';
+        $this->_HAVING .= $CLAUSE." `{$column}` {$operand} ? ";
+        $this->_binParamFormat($value);
+        $this->_params[] = is_array($value) ? '('.implode(",", array_values($value)).')' : $value;
         return $this;
     }
 
-    public function from(string $table, string $alias = "") : self {
-        $this->table = $table . ( $alias === "" ?  "" : $alias);
+    public function from(string $table, string $alias = '') : self {
+        $this->_FROM = " FROM {$table} {( $alias === '' ?  '' : ' AS '.$alias)} ";
         return $this;
     }
 
-    public function join(string $table, string $alias = "", string $on = "", string $join_type = "INNER") {
-        $this->joins[]  = [
-            '_table' => $table,
-            '_alias' => $alias,
-            '_on' => $on,
-            '_join' => $join_type
-        ];
+    public function join(string $table, string $alias = '', string $on = "", string $join_type = "INNER") {
+        $this->_JOINS .= " {$join_type} JOIN {$table} {( $alias === '' ?  '' : ' AS '.$alias)} ON {$on} ";
+        return $this;
+    }
+
+    public function orderBy(string $columnsList, string $order = 'ASC' ) {
+        $this->_ORDER_BY = " ORDER BY {$columnsList} {$order} ";
+    }
+
+    public function limit(int $limit = 1000, int $offset = 0) {
+        $this->_LIMIT = " LIMIT {$limit} ";
+        $this->_OFFSET = " OFFSET {$offset} ";
+    }
+
+    public function set(string $column, $value ) : self {
+        $CLAUSE = $this->_SETTERS === '' ? ' SET ' : ' , ';
+        $this->_SETTERS .= $CLAUSE." `{$column}` = ? ";
+        $this->_binParamFormat($value);
+        $this->_params[] = is_array($value) ? '('.implode(",", array_values($value)).')' : $value;
+        return $this;
+    }
+
+    public function select(array $fields = ["*"], bool $mode = false) : self {
+        $this->_MODE =  1;
+        if(count($fields) == 1 && $fields[0] == "*")  {
+            $this->_query = "SELECT * ";
+        } else {
+            $select = '';
+            foreach($fields as $index => $field) {
+                if(is_numeric($index)) {
+                    $this->_COLUMNS[] = $field;
+                    if($mode === false) 
+                        $select .= "`,{$field}`";
+                    else
+                        $select .= ",{$field}";
+                } else {
+                    $this->_COLUMNS[] = $index;
+                    $select .= ",{$index}";
+                }
+            }
+            $select = ltrim($select, ',');
+            $this->_query = "SELECT {$select} ";
+        }  
         return $this;
     }
 
     public function insert(string $table, array $data = []) : self {
+        $this->_MODE = 2;
         $this->_query = "INSERT INTO {$table} ";
         $columnsList = "";
         $valuesList = "";
@@ -117,35 +139,35 @@ class Query {
         return $this;
     }
 
-    public function update(string $table, array $data) : self {
-        $binds = "";
+    public function update(string $table, array $data = []) : self {
+        $this->_MODE = 3;
         $this->_query = "UPDATE {$table}";
-        $setterList = "";
-        foreach($data as $column => $value) {
-            $setterList .= ",`{$column}` = ?";
-            $this->_binParamFormat($value);
-            $this->_params[] = $value;
+        if(\count($data) > 0) {
+            foreach($data as $column => $value) {
+                $this->set($column, $value);
+            }
         }
-        $setterList = \ltrim($setterList, ",");
-        $this->_query .= " SET ({$setterList}) ";
+        return $this;
+    }
+
+    public function delete() {
+        $this->_MODE = 4;
         return $this;
     }
 
     public function getQuery() : string {
-        if($this->select != '') $this->_query .= $this->select;
-        if(count($this->whereClause) > 0 ) {
-            $where = "";
-            foreach ($this->whereClause as $condition) {
-                $where .= "AND {$condition['_column']} {$condition['_operand']} ? ";
-                $this->_binParamFormat($condition['_column']);
-                $this->_params[] = $condition['_value'];
-            }
-            $where = \ltrim($where, 'AND');
-            if($where != "") {
-                $this->_query .= " WHERE {$where} ";
-            } 
+
+        switch($this->_MODE) {
+            case 1:
+                $this->_query .= " {$this->_FROM} {$this->_JOINS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_ORDER_BY} {$this->_LIMIT} {$this->_OFFSET} ";
+                break;
+            case 3: 
+                $this->_query .= " {$this->_JOINS} {$this->_SETTERS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_LIMIT} ";
+                break;
+            case 4:   
+                $this->_query = " DELETE {$this->_FROM} {$this->_JOINS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_ORDER_BY} {$this->_LIMIT} ";     
+                break;
         }
-        if(count)
         return $this->_query;
     }
 
@@ -158,7 +180,17 @@ class Query {
     }
 
     protected function flush() : self {
-        
+        $this->_MODE = 0;
+        $this->_COLUMNS = [];
+        $this->_FROM = '';
+        $this->_JOINS = '';
+        $this->_WHERE = '';
+        $this->_GROUP_BY = '';
+        $this->_HAVING = '';
+        $this->_ORDER_BY = '';
+        $this->_LIMIT = '';
+        $this->_OFFSET = '';
+        $this->_SETTERS = '';
     }
 
     protected function _binParamFormat(&$value) {

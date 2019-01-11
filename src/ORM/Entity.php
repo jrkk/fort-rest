@@ -90,10 +90,26 @@ class Entity {
 
     public function findById() {
         $query = new Query();
-        $query->select('*')
+        $query->select(['*'])
             ->where($this->_keys[0], $this->{$this->_keys[0]})
             ->limit(1,0)
             ;
+
+        $row = DB::retrive(
+            $query->getQuery(),
+            $query->getBindParamsFormat(),
+            $query->getBindPrams()
+        );  
+
+        if($row == null) return false;
+
+        foreach ($row as $column => $value ) {
+            if($this->_keys[0] == $column) continue;
+            if(isset($this->{$column}))
+                $this->{$column} = $value;
+        }
+
+        return true;
     }
     
     public function save() : bool {
@@ -132,12 +148,8 @@ class Entity {
             $data[$this->_properties[$property]]  = $this->{$property};
         }
 
-        if($query === null) {
-            $query = new Query();
-            $query->where($this->_keys[0], $this->{$this->_keys[0]});
-        }
-
-        $query->update($this->_table, $data);
+        if($query === null) $query = new Query();
+        $query->update($this->_table, $data)->where($this->_keys[0], $this->{$this->_keys[0]});
 
         $affected = DB::update(
             $query->getQuery(), 
@@ -149,7 +161,10 @@ class Entity {
     }
 
     public function remove() {
-        
+        $query = new Query();
+        $query->delete()->from($this->_table)->where($this->_keys[0], $this->{$this->_keys[0]});
+
+        \var_export([ $query->getQuery(), $query->getBindParamsFormat(), $query->getBindPrams() ]);
     }
 
 }

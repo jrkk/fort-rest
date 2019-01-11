@@ -34,9 +34,9 @@ class Native implements Database {
         \var_export(\func_get_args());
     }
 
-    public static function retrive()
+    public static function retrive(string $query = '', string $formatString = '', array $data = [])
     {
-        
+        \var_export(\func_get_args());
     }
 
     public static function remove() {
