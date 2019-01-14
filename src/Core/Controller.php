@@ -1,7 +1,7 @@
 <?php
 namespace App\Core;
 
-use App\Driver\Mysql\Native;
+use App\Driver\Mysql\Native as DB;
 
 class Controller
 {
@@ -51,12 +51,11 @@ class Controller
             return $this->response->sendError(505, 'Un-Supported Scheme')->send();
         }
 
-        $this->db = new Native();
-        $this->db->connect();
+        DB::connect();
 
         call_user_func_array([$this, $target['method']],[]);
 
-        $this->db->close();
+        DB::close();
         
         return $this->response->send();
 
@@ -65,8 +64,7 @@ class Controller
     public function load(string $resource, string $class, string $name) : void {
         switch($resource) {
             case 'entity' : 
-                $this->{$name} = new $class($this->db); 
-                $this->{$name}->bindProperties();
+                $this->{$name} = new $class(); 
                 break;
         }
     } 

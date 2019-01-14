@@ -1,7 +1,9 @@
 <?php
 namespace App\Driver\Mysql;
 
-class Query {
+use App\Prototype\QueryBuilder;
+
+class Query implements QueryBuilder {
 
     protected $_MODE = 0;
     protected $_COLUMNS = [];
@@ -24,7 +26,29 @@ class Query {
         \App\core\System::log('notice', 'New Query Builder class initiated');
     }
     
-    
+    public function from(string $table, string $alias = '') : self {
+        $alias = ( $alias === '' ?  '' : ' AS '.$alias);
+        $this->_FROM = " FROM {$table} {$alias} ";
+        return $this;
+    }
+
+    public function join(string $table, string $alias = '', string $on = "", string $join_type = "INNER") {
+        $alias = ( $alias === '' ?  '' : ' AS '.$alias);
+        $this->_JOINS .= " {$join_type} JOIN {$table} {$alias} ON {$on} ";
+        return $this;
+    }
+
+    public function orderBy(string $columnsList, string $order = 'ASC' ) : self {
+        $this->_ORDER_BY = " ORDER BY {$columnsList} {$order} ";
+        return $this;
+    }
+
+    public function limit(int $limit = 1000, int $offset = 0) : self {
+        $this->_LIMIT = " LIMIT {$limit} ";
+        $this->_OFFSET = " OFFSET {$offset} ";
+        return $this;
+    }
+
 
     public function where(string $column , $value, string $operand = "=") : self {
         $CLAUSE = $this->_WHERE === '' ? ' WHERE ' : ' AND ';
@@ -71,25 +95,6 @@ class Query {
         return $this;
     }
 
-    public function from(string $table, string $alias = '') : self {
-        $this->_FROM = " FROM {$table} {( $alias === '' ?  '' : ' AS '.$alias)} ";
-        return $this;
-    }
-
-    public function join(string $table, string $alias = '', string $on = "", string $join_type = "INNER") {
-        $this->_JOINS .= " {$join_type} JOIN {$table} {( $alias === '' ?  '' : ' AS '.$alias)} ON {$on} ";
-        return $this;
-    }
-
-    public function orderBy(string $columnsList, string $order = 'ASC' ) {
-        $this->_ORDER_BY = " ORDER BY {$columnsList} {$order} ";
-    }
-
-    public function limit(int $limit = 1000, int $offset = 0) {
-        $this->_LIMIT = " LIMIT {$limit} ";
-        $this->_OFFSET = " OFFSET {$offset} ";
-    }
-
     public function set(string $column, $value ) : self {
         $CLAUSE = $this->_SETTERS === '' ? ' SET ' : ' , ';
         $this->_SETTERS .= $CLAUSE." `{$column}` = ? ";
@@ -129,7 +134,7 @@ class Query {
         $valuesList = "";
         foreach($data as $column => $value) {
             $columnsList .= ",`{$column}`";
-            $valuesList .= ",?";
+            $valuesList .= ", ?";
             $this->_binParamFormat($value);
             $this->_params[] = $value;
         }
@@ -150,7 +155,8 @@ class Query {
         return $this;
     }
 
-    public function delete() {
+    public function delete(string $table = '') : self {
+        $this->_query = "DELETE ";
         $this->_MODE = 4;
         return $this;
     }
@@ -165,7 +171,7 @@ class Query {
                 $this->_query .= " {$this->_JOINS} {$this->_SETTERS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_LIMIT} ";
                 break;
             case 4:   
-                $this->_query = " DELETE {$this->_FROM} {$this->_JOINS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_ORDER_BY} {$this->_LIMIT} ";     
+                $this->_query .= " {$this->_FROM} {$this->_JOINS} {$this->_WHERE} {$this->_GROUP_BY} {$this->_HAVING} {$this->_ORDER_BY} {$this->_LIMIT} ";     
                 break;
         }
         return $this->_query;
@@ -179,7 +185,7 @@ class Query {
         return $this->_params;
     }
 
-    protected function flush() : self {
+    public function flush() : self {
         $this->_MODE = 0;
         $this->_COLUMNS = [];
         $this->_FROM = '';
@@ -191,6 +197,7 @@ class Query {
         $this->_LIMIT = '';
         $this->_OFFSET = '';
         $this->_SETTERS = '';
+        return $this;
     }
 
     protected function _binParamFormat(&$value) {

@@ -4,7 +4,7 @@ namespace App\Entity;
 use App\ORM\Entity;
 
 /**
- * @Table=users
+ * @Table=mydb.users
  */
 class User extends Entity  {
 
@@ -21,21 +21,62 @@ class User extends Entity  {
     var $id = 0;
 
     /**
-     * @Column=user
-     * @Type=DateTime
+     * @Column=username
+     * @Type=string
      */
     var $username;
+
+    /**
+     * @Column=email
+     * @Type=string
+     */
     var $email;
+
+    /**
+     * @Column=mobile
+     * @Type=string
+     */
     var $mobile;
+
+    /**
+     * @Column=password
+     * @Type=string
+     */
     var $password;
-    var $role;
-    var $createddt;
-    var $createdtm;
+
+    /**
+     * @Column=role
+     * @Type=string
+     */
+    var $role = 'USER';
+
+    /**
+     * @Column=createddt
+     * @Type=DateTime
+     */
+    var $createddt = null;
+
+    /**
+     * @Column=createdtm
+     * @Type=DateTime
+     */
+    var $createdtm = null;
+
     /**
      * @Nullable
      */
     var $updated;
-    var $active;
-    var $state;
+
+    /**
+     * @Column=active
+     * @Type=int
+     */
+    var $active = 0;
+
+    /**
+     * @Column=state
+     * @Type=int
+     */
+    var $state = 1;
     
 }

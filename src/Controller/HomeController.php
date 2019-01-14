@@ -14,8 +14,15 @@ class HomeController extends Controller {
         $this->user->email = 'kiranjrkk@gmail.com';
         $this->user->mobile = 9676640228;
         $this->user->role = 'admin';
+        $this->user->password = md5($this->user->mobile);
 
-        $this->user->remove();
+        $cdt = new \DateTime('now');
+        $this->user->createddt = $cdt->format('Y-m-d');
+        $this->user->createdtm = $cdt->format('H:i:s');
+
+        $this->user->save();
+
+        //$this->user->remove();
         //$this->user->update(['username','email']);
 
         $this->user->id = 11;

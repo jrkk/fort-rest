@@ -2,6 +2,7 @@
 namespace App\ORM;
 
 use App\Prototype\Database;
+use App\Prototype\QueryBuilder;
 use App\Driver\Mysql\Native as DB;
 use App\Driver\Mysql\Query;
 
@@ -17,7 +18,8 @@ class Entity {
     protected $_primitives = [];
     protected $_changed_columns = [];
 
-    function __construct() {
+    function __construct(array $configuration = []) {
+        $this->bindProperties();
         \App\Core\System::log('notice','Entity has initiated for '.get_class($this));
     }
 
@@ -81,25 +83,29 @@ class Entity {
         }
     }
     
-    public function find(array $critera = []) {
-        $query = new Query();
-        if(!isset($critera['select']) || empty($critera['select']) ) {
-
-        }
+    public function find(array $critera = []) 
+    {
+        
     }
 
-    public function findById() {
+    public function findAll(QueryBuilder $query)
+    {
+
+    }
+
+    public function findOne(array $critera = [])
+    {
+
+    }
+
+    public function findById() : bool {
         $query = new Query();
         $query->select(['*'])
             ->where($this->_keys[0], $this->{$this->_keys[0]})
             ->limit(1,0)
             ;
 
-        $row = DB::retrive(
-            $query->getQuery(),
-            $query->getBindParamsFormat(),
-            $query->getBindPrams()
-        );  
+        $row = DB::retrive($query);  
 
         if($row == null) return false;
 
@@ -125,11 +131,7 @@ class Entity {
         $query->insert($this->_table, $data);
 
         $insertId = 0;
-        $insertId = DB::persist(
-            $query->getQuery(), 
-            $query->getBindParamsFormat(), 
-            $query->getBindPrams()
-        );
+        $insertId = DB::persist($query);
 
         $this->{$this->_keys[0]} = $insertId;
 
@@ -137,7 +139,7 @@ class Entity {
 
     }
 
-    public function update(array $properties = [], Query $query = null ) : bool {
+    public function update(array $properties = [], QueryBuilder $query = null ) : bool {
 
         if(count($properties) <= 0) return false;
         $data = [];
@@ -151,20 +153,18 @@ class Entity {
         if($query === null) $query = new Query();
         $query->update($this->_table, $data)->where($this->_keys[0], $this->{$this->_keys[0]});
 
-        $affected = DB::update(
-            $query->getQuery(), 
-            $query->getBindParamsFormat(), 
-            $query->getBindPrams()
-        );
+        $affected = DB::update($query);
 
         return $affected > 0 ? true : false;
     }
 
-    public function remove() {
+    public function remove() : bool {
         $query = new Query();
         $query->delete()->from($this->_table)->where($this->_keys[0], $this->{$this->_keys[0]});
 
-        \var_export([ $query->getQuery(), $query->getBindParamsFormat(), $query->getBindPrams() ]);
+        $affected = DB::remove($query);
+
+        return $affected > 0 ? true : false;
     }
 
 }
