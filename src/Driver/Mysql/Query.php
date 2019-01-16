@@ -21,6 +21,8 @@ class Query implements QueryBuilder {
     protected $_binds = "";
     protected $_params = [];
 
+    private $_className = 'stdClass';
+
     function __construct()
     {
         \App\core\System::log('notice', 'New Query Builder class initiated');
@@ -133,7 +135,8 @@ class Query implements QueryBuilder {
         $columnsList = "";
         $valuesList = "";
         foreach($data as $column => $value) {
-            $columnsList .= ",`{$column}`";
+            $column = trim($column);
+            $columnsList .= ",`{$column}` ";
             $valuesList .= ", ?";
             $this->_binParamFormat($value);
             $this->_params[] = $value;
@@ -149,6 +152,7 @@ class Query implements QueryBuilder {
         $this->_query = "UPDATE {$table}";
         if(\count($data) > 0) {
             foreach($data as $column => $value) {
+                $column = trim($column);
                 $this->set($column, $value);
             }
         }
@@ -210,5 +214,25 @@ class Query implements QueryBuilder {
         } else {
             $this->_binds .= "b";
         }
+    }
+
+    /**
+     * Get the value of _className
+     */ 
+    public function getClassName()
+    {
+        return $this->_className;
+    }
+
+    /**
+     * Set the value of _className
+     *
+     * @return  self
+     */ 
+    public function setClassName($_className)
+    {
+        $this->_className = $_className;
+
+        return $this;
     }
 }

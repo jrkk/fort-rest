@@ -20,12 +20,13 @@ class HomeController extends Controller {
         $this->user->createddt = $cdt->format('Y-m-d');
         $this->user->createdtm = $cdt->format('H:i:s');
 
-        $this->user->save();
+        //$this->user->save();
 
+        $this->user->id = 1;
+        //$this->user->update(['password']);
+
+        $this->user->findById();
         //$this->user->remove();
-        //$this->user->update(['username','email']);
-
-        $this->user->id = 11;
         //$this->user->findById();
 
         $this->response

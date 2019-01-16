@@ -34,24 +34,53 @@ class Native implements Database {
     {
         if(self::$connection === null) throw new \Exception("Connection not established");
         $stmt = self::$connection->prepare($query->getQuery());
-        if($stmt === false ) throw new \Exception("Mysql Statement not prepared");
+        if($stmt === false ) throw new \Exception('Mysql Statement not prepared '.mysqli_error(self::$connection));
         $result = $stmt->bind_param($query->getBindParamsFormat(), ...$query->getBindPrams());
-        if($result === false) throw new \Exception('Statement not bind exception');
+        if($result === false) throw new \Exception('Statement not bind exception '.$result->error);
         if($stmt->execute() === false) {
             self::$errors[] = $stmt->error;
             return 0;
         }
-        return $stmt->insert_id;
+        $insert_id = 0;
+        $insert_id = $stmt->insert_id;
+        $stmt->close();
+        return $insert_id;
     }
 
     public static function update(QueryBuilder $query) 
     {
-        \var_export($query);
+        if(self::$connection === null) throw new \Exception("Connection not established");
+        $stmt = self::$connection->prepare($query->getQuery());
+        if($stmt === false ) throw new \Exception('Mysql Statement not prepared '.mysqli_error(self::$connection));
+        $result = $stmt->bind_param($query->getBindParamsFormat(), ...$query->getBindPrams());
+        if($result === false) throw new \Exception('Statement not bind exception '.$result->error);
+        if($stmt->execute() === false) {
+            self::$errors[] = $stmt->error;
+            return 0;
+        }
+        $affected_rows = 0;
+        $affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $affected_rows;
     }
 
     public static function retrive(QueryBuilder $query)
     {
-        \var_export($query);
+        if(self::$connection === null) throw new \Exception("Connection not established");
+        $stmt = self::$connection->prepare($query->getQuery());
+        if($stmt === false ) throw new \Exception('Mysql Statement not prepared '.mysqli_error(self::$connection));
+        $result = $stmt->bind_param($query->getBindParamsFormat(), ...$query->getBindPrams());
+        if($result === false) throw new \Exception('Statement not bind exception '.$result->error);
+        if($stmt->execute() === false) {
+            self::$errors[] = $stmt->error;
+            return 0;
+        }
+        $data = $stmt->get_result();
+        if($data instanceof \mysqli_result) {
+            return $data->fetch_object($query->getClassName());
+        }
+        $stmt->close();
+        return null;
     }
 
     public static function remove(QueryBuilder $query) {
