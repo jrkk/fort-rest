@@ -8,15 +8,15 @@ use App\Driver\Mysql\Query;
 
 class Entity {
 
-    protected $_table = '';
-    protected $_nullables = [];
-    protected $_data_types = [];
-    protected $_properties = [];
-    protected $_keys = [];
-    protected $_squences = [];
-    protected $_auto_columns = [];
-    protected $_primitives = [];
-    protected $_changed_columns = [];
+    private $_table = '';
+    private $_nullables = [];
+    private $_data_types = [];
+    private $_properties = [];
+    private $_keys = [];
+    private $_squences = [];
+    private $_auto_columns = [];
+    private $_primitives = [];
+    private $_changed_columns = [];
 
     function __construct(array $configuration = []) {
         $this->bindProperties();
@@ -62,7 +62,7 @@ class Entity {
                     $this->_nullables[] = $name;
                 }
                 if(strstr($annotation, "@Column") !== false) {
-                    $column = str_replace(['@Column=',"\n","\t"], ["","",""], $annotation);
+                    $column = str_replace(['@Column=',"\n","\t","\r\n"], ["","","",""], $annotation);
                     $this->_properties[$name] = $column;
                 } 
                 if(strstr($annotation, "@Type") !== false) {
@@ -85,39 +85,49 @@ class Entity {
     
     public function find(array $critera = []) 
     {
-        
-    }
-
-    public function findAll(QueryBuilder $query)
-    {
-
+        $query =  new Query();
+        if(isset($critera['select']))
+            $query->select($critera['select']);
+        $query->from($this->_table);
+        if(isset($critera['where'])  
+            && is_array($critera['where']) 
+            && count($critera['where']) > 0 ) {
+            foreach( $critera['where'] as $where ) {
+                @call_user_func_array([$query, 'where'], ...$where);
+            }
+        }
+        if(isset($critera['where'])  
+            && is_array($critera['where']) 
+            && count($critera['where']) > 0 ) {
+            foreach( $critera['where'] as $where ) {
+                @call_user_func_array([$query, 'where'], ...$where);
+            }
+        }
     }
 
     public function findOne(array $critera = [])
     {
-
+        $critera['limit'] = 1;
+        $critera['offset'] = 0;
+        $row = $this->find($critera);  
+        if($row == null) return false;
+        $this->fromObject($row[0]);
+        return true;
     }
-
     public function findById() : bool {
         $query = new Query();
-        $query->select(['*'])
+        //$query->setClassName(get_class($this));
+        $query->select()
+            ->from($this->_table)
             ->where($this->_keys[0], $this->{$this->_keys[0]})
             ->limit(1,0)
             ;
 
         $row = DB::retrive($query);  
-
         if($row == null) return false;
-
-        foreach ($row as $column => $value ) {
-            if($this->_keys[0] == $column) continue;
-            if(isset($this->{$column}))
-                $this->{$column} = $value;
-        }
-
+        $this->fromObject($row);
         return true;
     }
-    
     public function save() : bool {
         $data = [];
         foreach ($this->_properties as $property => $column) {
@@ -138,7 +148,6 @@ class Entity {
         return $insertId > 0 ? true : false;
 
     }
-
     public function update(array $properties = [], QueryBuilder $query = null ) : bool {
 
         if(count($properties) <= 0) return false;
@@ -157,7 +166,6 @@ class Entity {
 
         return $affected > 0 ? true : false;
     }
-
     public function remove() : bool {
         $query = new Query();
         $query->delete()->from($this->_table)->where($this->_keys[0], $this->{$this->_keys[0]});
@@ -165,6 +173,21 @@ class Entity {
         $affected = DB::remove($query);
 
         return $affected > 0 ? true : false;
+    }
+    public function fromObject(stdClass $row) {
+        foreach ($row as $column => $value ) {
+            if(isset($this->{$column}) && in_array($column, $this->_properties) )
+                $this->{$column} = $value;
+        }
+        return $this;
+    }
+
+    public function fromArray(array $data) {
+        foreach ($data as $column => $value ) {
+            if(isset($this->{$column}) && in_array($column, $this->_properties) )
+                $this->{$column} = $value;
+        }
+        return $this;
     }
 
 }

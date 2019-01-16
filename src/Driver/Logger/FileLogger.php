@@ -47,13 +47,11 @@ class FileLogger extends Log {
                 $content = "{$message}{$this->delimiter}";
                 $totalBytes += $this->file->fwrite($content, strlen($content));
             }
-            //echo $totalBytes." Bytes of information written on file.";
             $this->messages = []; 
         }
     }
     private function getFilePath() {
         $stamp = $this->getDateStamp($this->stamp,'-');
-        // generate the file path
         $filename = "{$this->filePrefix}{$this->name}-{$stamp}{$this->ext}";
         $filepath = $this->path.FILE_DELIMITER.$filename;
         $this->santize_file_path($filepath);
