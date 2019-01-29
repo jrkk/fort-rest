@@ -174,11 +174,7 @@ class Entity {
 
         return $affected > 0 ? true : false;
     }
-<<<<<<< HEAD
-    public function fromObject(Object $row) {
-=======
-    public function fromObject(stdClass $row) {
->>>>>>> 02c1985ff42380947d31cfd61797ff98d46e824f
+        public function fromObject(Object $row) {
         foreach ($row as $column => $value ) {
             if(isset($this->{$column}) && in_array($column, $this->_properties) )
                 $this->{$column} = $value;
