@@ -9,30 +9,21 @@ use App\Files\FileModes;
 
 use App\Exception\FileNotWritableException;
 
-class FileLogger extends Log {
+class FileLogger extends BaseLogger implements LoggerConfig {
 
     use \App\Helper\Path;
     use \App\Helper\Temporial;
 
     protected $file;
 
-    protected $ext = '.log';
-    protected $path = BASEPATH.FILE_DELIMITER.'storage'.FILE_DELIMITER.'logs';
-    protected $filePrefix = 'log-';
-    protected $permission = 0755;
-    protected $stamp = 'Y-m-d-h-i';
-
     private $name = '';
     protected $delimiter = "\n";
 
-    function __construct() {
-       parent::__construct();
-    }
     public function handler() {
         $filepath = $this->getFilePath();
         $this->file = new FileObject($filepath, FileModes::CW);
         if($this->file instanceof FileObject ) {  
-            chmod($filepath, $this->permission);  
+            chmod($filepath, self::FILE_PERMISSION);  
             return true; 
         }
     }
@@ -44,17 +35,25 @@ class FileLogger extends Log {
             $totalBytes = 0;
             foreach( $this->messages as $index => $message ){
                 $content = '';
-                $content = "{$message}{$this->delimiter}";
+                $content = "{$index}\t{$message}{$this->delimiter}";
                 $totalBytes += $this->file->fwrite($content, strlen($content));
             }
             $this->messages = []; 
         }
     }
     private function getFilePath() {
-        $stamp = $this->getDateStamp($this->stamp,'-');
-        $filename = "{$this->filePrefix}{$this->name}-{$stamp}{$this->ext}";
-        $filepath = $this->path.FILE_DELIMITER.$filename;
+        $stamp = $this->getDateStamp(self::FILE_STAMP,'-');
+        $filename = self::FILE_PREFIX."{$this->name}-{$stamp}".self::FILE_EXT;
+        $filepath = self::FILE_PATH.FILE_DELIMITER.$filename;
         $this->santize_file_path($filepath);
         return $filepath;
     }
+
+    protected function interpolate(&$message, array $context = []) {
+        if(self::EXEC_VARS === true) {
+
+        }
+        $message .= var_export($context, true);
+    }
+
 }

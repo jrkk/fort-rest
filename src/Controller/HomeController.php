@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Core\System;
 use App\Core\Controller;
 use App\Entity\User;
 
@@ -8,24 +9,24 @@ class HomeController extends Controller {
     
     public function start() {
 
-        $this->load('entity', User::class, 'user');
+        $user = System::load('user', User::class);
 
-        $this->user->username = 'Jrk Kiran';
-        $this->user->email = 'kiranjrkk@gmail.com';
-        $this->user->mobile = 9676640228;
-        $this->user->role = 'admin';
-        $this->user->password = md5($this->user->mobile);
+        $user->username = 'Jrk Kiran';
+        $user->email = 'kiranjrkk@gmail.com';
+        $user->mobile = 9676640228;
+        $user->role = 'admin';
+        $user->password = md5($user->mobile);
 
         $cdt = new \DateTime('now');
-        $this->user->createddt = $cdt->format('Y-m-d');
-        $this->user->createdtm = $cdt->format('H:i:s');
+        $user->createddt = $cdt->format('Y-m-d');
+        $user->createdtm = $cdt->format('H:i:s');
 
         //$this->user->save();
 
-        $this->user->id = 1;
+        $user->id = 1;
         //$this->user->update(['password']);
 
-        $this->user->findById();
+        $user->findById();
         //$this->user->remove();
         //$this->user->findById();
 

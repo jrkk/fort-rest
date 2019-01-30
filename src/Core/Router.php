@@ -6,14 +6,14 @@ use App\Config\AppConfig;
 
 class Router
 {
+    use \App\Helper\Loader;
 
     protected $routing = null;
 
     function __construct()
     {
+        $this->routing = $this->loadConfig('/src/Config/Routes.php');
         System::log('info', 'Router class initiated');
-        $path = dirname(FCPATH) . '/src/Config/Routes.php';
-        $this->routing = include_once $path;
 
     }
 

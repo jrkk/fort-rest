@@ -14,7 +14,7 @@ trait Temporial {
         $frags = [];
         foreach($formaters as $format) {
             $val = null;
-            $val = eval('return '.$dt->format("".$format." ").' ;');
+            $val = eval('return '.$dt->format("".$format."").' ;');
             if(is_float($val)) {
                 $val = intVal($val);
             }

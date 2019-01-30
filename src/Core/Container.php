@@ -34,4 +34,9 @@ class Container implements ContainerInterface  {
         }
     }
 
+    public function share($id, $var) {
+        $this->wrapper[$id] = $var;
+        return $this;
+    }
+
 }
