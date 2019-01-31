@@ -20,7 +20,7 @@ class Container implements ContainerInterface  {
         if(!is_string($id)) {
             throw new NotFoundException();
         }
-        return isset($this->wrapper[$id]) ? true : false ;
+        return isset($this->wrapper[$id]);
     }
 
     public function set($id, $val) {
@@ -34,8 +34,8 @@ class Container implements ContainerInterface  {
         }
     }
 
-    public function share($id, $var) {
-        $this->wrapper[$id] = $var;
+    public function share($id, &$object) {
+        $this->wrapper[$id] = $object;
         return $this;
     }
 

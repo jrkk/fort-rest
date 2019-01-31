@@ -7,11 +7,7 @@ class AppConfig {
     const PATHDELIMITER = "\\";
     const Logger = \App\Driver\Logger\NullLogger::class;
     const PreLoads = [
-        'entities' => [
-            
-        ],
-        'services' => [
-
-        ],
+        ['token',\App\Entity\Token::class],
+        ['user',\App\Entity\User::class]
     ];
 }
