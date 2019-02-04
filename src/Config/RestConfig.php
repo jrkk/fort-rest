@@ -4,7 +4,7 @@ namespace App\Config;
 class RestConfig {
     const XssClean = false;
     const CsrfTokens = false;
-    const AuthTokens = true;
+    const Oauth = true;
     const Authorization = 'Basic';
     const LADP = false;
     const AcceptMimes = [

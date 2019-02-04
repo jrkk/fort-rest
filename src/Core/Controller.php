@@ -1,8 +1,6 @@
 <?php
 namespace App\Core;
 
-use App\Config\RestConfig;
-
 class Controller
 {
     protected $request = null;
@@ -25,16 +23,15 @@ class Controller
         $this->response = $response;
     }
 
-    public function exec($method) {
+    public function exec($method, array $params = []) {
 
         $this->request = System::load('request');
         $this->response = System::load('response');
 
         $this->request->getServer()->parse();
-        
-        RestConfig::AuthTokens && $this->isAuthorized();
 
-        call_user_func_array([$this, $method],[]);
+        
+        call_user_func_array([$this, $method], $params);
 
         return $this->response->send();
 

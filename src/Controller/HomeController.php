@@ -1,6 +1,8 @@
 <?php
 namespace App\Controller;
 
+use App\Config\RestConfig;
+
 use App\Core\System;
 use App\Core\Controller;
 use App\Entity\User;
@@ -8,6 +10,8 @@ use App\Entity\User;
 class HomeController extends Controller {
     
     public function start() {
+        
+        RestConfig::Oauth && $this->isAuthorized();
 
         $user = System::load('user', User::class);
 
