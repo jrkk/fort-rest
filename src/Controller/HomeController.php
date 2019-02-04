@@ -9,8 +9,6 @@ class HomeController extends Controller {
     
     public function start() {
 
-        var_export($this->request->getServer()->attributes());
-
         $user = System::load('user', User::class);
 
         $user->username = 'Jrk Kiran';

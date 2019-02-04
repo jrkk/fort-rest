@@ -22,7 +22,7 @@ class System {
         self::$OC = new Container();
 
         self::load('uri', Uri::class);
-        self::load('requestHeader', Header::class);
+        //self::load('requestHeader', Header::class);
         //self::load('responseHeader', Header::class);
         self::load('server', Server::class);
         //self::load('request', Request::class, ['requestHeader']);
@@ -57,18 +57,19 @@ class System {
         $request->withUri(self::load('uri'))
                 ->withServer(self::load('server'));
         
+        $security = self::load('security', Security::class);
         $router = self::load('router');
 
         $target = $router->getRoute($request, $response);
-        if($target === false) {
+        if($target === false
+            || $router->validate($target) === false ) {
             return $response->send();
         }
         
         $ctrl = "\\App\\Controller\\".$target['controller'];
 
         $controller = new $ctrl();
-        $controller->inject($request, $response);
-        return $controller->exec($target); 
+        return $controller->exec($target['method']); 
 
     }
 

@@ -50,4 +50,32 @@ class Router
         return $target;
     }
 
+    public function validate(array &$route) {
+
+        $security = System::load('security', Security::class);
+        $request = System::load('request', Request::class);
+        $response = System::load('response', Response::class);
+
+        if($security->isAllowedMethod($request, $route['allowedMethods']) === false) {
+            System::$logger->info("method not allowed");
+            $response->sendError(405, 'method not found');
+            return false;
+        }
+
+        if($security->isAllowedOrigin($request, $route['allowedOrigins']) === false ) {
+            System::$logger->info("Origin not allowed");
+            $response->sendError(400, 'Bad Request');
+            return false;
+        }
+
+        if($security->isAllowedProtocol($request, $route['allowedSchemes']) === false ) {
+            System::$logger->info("Un-Supported Scheme");
+            $response->sendError(505, 'Un-Supported Scheme');
+            return false;
+        }
+
+        return true;
+
+    }
+
 }

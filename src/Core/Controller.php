@@ -1,55 +1,40 @@
 <?php
 namespace App\Core;
 
+use App\Config\RestConfig;
+
 class Controller
 {
+    protected $request = null;
+    protected $response = null;
+
+    protected $isAuthorized = false;
+
+    use \App\Helper\Oauth;
 
     function __construct() {
         System::log('info', 'Controller class initiated');
     }
 
-    protected $request = null;
-    protected $response = null;
-
-    protected $db = null;
-
     public function inject(
-        Request $request,
-        Response $response
+        Request &$request,
+        Response &$response
     )
     {
         $this->request = $request;
         $this->response = $response;
     }
 
-    public function exec(array $target) {
+    public function exec($method) {
+
+        $this->request = System::load('request');
+        $this->response = System::load('response');
 
         $this->request->getServer()->parse();
+        
+        RestConfig::AuthTokens && $this->isAuthorized();
 
-        // is valid request method
-        if (!empty($target)) {
-            $method = $this->request->getMethod(true);
-            if(!in_array($method, $target['allowedMethods'])) {
-                return $this->response->sendError(405, 'method not found')->send();
-            }
-        }
-
-        // is valid origin
-        if( !in_array("*", $target['allowedOrigins']) ) {
-            $this->request->withRequestTarget($target['allowedOrigins']);
-            $referer = $this->request->getServer()->getReferer();
-            var_export($referer);
-            if(!in_array($referer, $target['allowedOrigins'])) {
-                return $this->response->sendError(400, 'Bad Request')->send();
-            }
-        }
-
-        //is allowed scheme
-        if(!in_array($this->request->getServer()->getProtocol(), $target['allowedSchemes'])) {
-            return $this->response->sendError(505, 'Un-Supported Scheme')->send();
-        }
-
-        call_user_func_array([$this, $target['method']],[]);
+        call_user_func_array([$this, $method],[]);
 
         return $this->response->send();
 
