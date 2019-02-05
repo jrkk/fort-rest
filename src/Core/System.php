@@ -22,13 +22,10 @@ class System {
         self::$OC = new Container();
 
         self::load('uri', Uri::class);
-        //self::load('requestHeader', Header::class);
-        //self::load('responseHeader', Header::class);
         self::load('server', Server::class);
-        //self::load('request', Request::class, ['requestHeader']);
-        //self::load('response', Response::class, ['responseHeader']);
         self::load('request', Request::class, ['requestHeader' => Header::class]);
         self::load('response', Response::class, ['responseHeader' => Header::class]);
+        self::load('security', Security::class);
         self::load('router', Router::class);
 
         self::$logger->info("System Resources has loaded");
