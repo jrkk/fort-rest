@@ -11,7 +11,6 @@ class NullLogger extends BaseLogger implements LoggerConfig {
 
         }
         $message .= var_export($context, true);
-        var_dump($message);
     }
 
     public function push() {

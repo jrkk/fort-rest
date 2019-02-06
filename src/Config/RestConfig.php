@@ -6,6 +6,7 @@ class RestConfig {
     const CsrfTokens = false;
     const Oauth = true;
     const Authorization = 'Basic';
+    const Driver = \App\Driver\Oauth\BasicAuthorization::class;
     const LADP = false;
     const AcceptMimes = [
         'application/json' => 'json',
